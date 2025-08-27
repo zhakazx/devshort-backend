@@ -18,13 +18,8 @@ func NewLinkRepository(log *logrus.Logger) *LinkRepository {
 	}
 }
 
-func (r *LinkRepository) FindById(tx *gorm.DB, id string) (*entity.Link, error) {
-	link := new(entity.Link)
-	if err := tx.Where("id = ?", id).First(link).Error; err != nil {
-		r.Log.WithError(err).Error("error finding link by id")
-		return nil, err
-	}
-	return link, nil
+func (r *LinkRepository) FindByIdAndUserId(tx *gorm.DB, link *entity.Link, id string, userId string) error {
+	return tx.Where("id = ? AND user_id = ?", id, userId).First(link).Error
 }
 
 func (r *LinkRepository) FindAllByUserId(tx *gorm.DB, userId string) ([]entity.Link, error) {
