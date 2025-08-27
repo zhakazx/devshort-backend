@@ -1,8 +1,8 @@
 package messaging
 
 import (
+	"devshort-backend/internal/model"
 	"encoding/json"
-	"golang-clean-architecture/internal/model"
 
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"

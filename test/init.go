@@ -1,7 +1,7 @@
 package test
 
 import (
-	"golang-clean-architecture/internal/config"
+	"devshort-backend/internal/config"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

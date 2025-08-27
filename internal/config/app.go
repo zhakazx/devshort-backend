@@ -1,12 +1,12 @@
 package config
 
 import (
-	"golang-clean-architecture/internal/delivery/http"
-	"golang-clean-architecture/internal/delivery/http/middleware"
-	"golang-clean-architecture/internal/delivery/http/route"
-	"golang-clean-architecture/internal/gateway/messaging"
-	"golang-clean-architecture/internal/repository"
-	"golang-clean-architecture/internal/usecase"
+	"devshort-backend/internal/delivery/http"
+	"devshort-backend/internal/delivery/http/middleware"
+	"devshort-backend/internal/delivery/http/route"
+	"devshort-backend/internal/gateway/messaging"
+	"devshort-backend/internal/repository"
+	"devshort-backend/internal/usecase"
 
 	"github.com/IBM/sarama"
 	"github.com/go-playground/validator/v10"

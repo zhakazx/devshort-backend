@@ -1,9 +1,9 @@
 package http
 
 import (
-	"golang-clean-architecture/internal/delivery/http/middleware"
-	"golang-clean-architecture/internal/model"
-	"golang-clean-architecture/internal/usecase"
+	"devshort-backend/internal/delivery/http/middleware"
+	"devshort-backend/internal/model"
+	"devshort-backend/internal/usecase"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"

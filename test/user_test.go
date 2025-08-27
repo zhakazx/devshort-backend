@@ -1,9 +1,9 @@
 package test
 
 import (
+	"devshort-backend/internal/entity"
+	"devshort-backend/internal/model"
 	"encoding/json"
-	"golang-clean-architecture/internal/entity"
-	"golang-clean-architecture/internal/model"
 	"io"
 	"net/http"
 	"net/http/httptest"

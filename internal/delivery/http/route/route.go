@@ -1,7 +1,7 @@
 package route
 
 import (
-	"golang-clean-architecture/internal/delivery/http"
+	"devshort-backend/internal/delivery/http"
 
 	"github.com/gofiber/fiber/v2"
 )

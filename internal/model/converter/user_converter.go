@@ -1,8 +1,8 @@
 package converter
 
 import (
-	"golang-clean-architecture/internal/entity"
-	"golang-clean-architecture/internal/model"
+	"devshort-backend/internal/entity"
+	"devshort-backend/internal/model"
 )
 
 func UserToResponse(user *entity.User) *model.UserResponse {

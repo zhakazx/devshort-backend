@@ -1,4 +1,4 @@
-module golang-clean-architecture
+module devshort-backend
 
 go 1.25
 

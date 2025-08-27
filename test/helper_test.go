@@ -1,7 +1,7 @@
 package test
 
 import (
-	"golang-clean-architecture/internal/entity"
+	"devshort-backend/internal/entity"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

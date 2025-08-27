@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"golang-clean-architecture/internal/config"
-	"golang-clean-architecture/internal/delivery/messaging"
+	"devshort-backend/internal/config"
+	"devshort-backend/internal/delivery/messaging"
 	"os"
 	"os/signal"
 	"syscall"

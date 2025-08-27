@@ -1,7 +1,7 @@
 package messaging
 
 import (
-	"golang-clean-architecture/internal/model"
+	"devshort-backend/internal/model"
 
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"

@@ -2,11 +2,11 @@ package usecase
 
 import (
 	"context"
-	"golang-clean-architecture/internal/entity"
-	"golang-clean-architecture/internal/gateway/messaging"
-	"golang-clean-architecture/internal/model"
-	"golang-clean-architecture/internal/model/converter"
-	"golang-clean-architecture/internal/repository"
+	"devshort-backend/internal/entity"
+	"devshort-backend/internal/gateway/messaging"
+	"devshort-backend/internal/model"
+	"devshort-backend/internal/model/converter"
+	"devshort-backend/internal/repository"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

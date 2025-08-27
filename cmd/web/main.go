@@ -1,8 +1,8 @@
 package main
 
 import (
+	"devshort-backend/internal/config"
 	"fmt"
-	"golang-clean-architecture/internal/config"
 )
 
 func main() {
