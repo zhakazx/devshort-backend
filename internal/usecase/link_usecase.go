@@ -84,36 +84,20 @@ func (c *LinkUseCase) Create(ctx context.Context, request *model.CreateLinkReque
 	return converter.LinkToResponse(link), nil
 }
 
-func (c *LinkUseCase) Get(ctx context.Context, id string, userId string) (*model.LinkResponse, error) {
-	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Rollback()
-
+func (c *LinkUseCase) Get(ctx context.Context, req *model.GetLinkRequest) (*model.LinkResponse, error) {
 	link := new(entity.Link)
-	if err := c.LinkRepository.FindByIdAndUserId(tx, link, id, userId); err != nil {
+	if err := c.LinkRepository.FindByIdAndUserId(c.DB.WithContext(ctx), link, req.ID, req.UserId); err != nil {
 		c.Log.WithError(err).Error("failed to find link")
 		return nil, fiber.ErrNotFound
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		c.Log.WithError(err).Error("failed to commit transaction")
-		return nil, fiber.ErrInternalServerError
 	}
 
 	return converter.LinkToResponse(link), nil
 }
 
-func (c *LinkUseCase) List(ctx context.Context, userId string) ([]model.LinkResponse, error) {
-	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Rollback()
-
-	links, err := c.LinkRepository.FindAllByUserId(tx, userId)
+func (c *LinkUseCase) List(ctx context.Context, request *model.ListLinkRequest) ([]model.LinkResponse, error) {
+	links, err := c.LinkRepository.FindAllByUserId(c.DB.WithContext(ctx), request.UserId)
 	if err != nil {
 		c.Log.WithError(err).Error("failed to find links by user id")
-		return nil, fiber.ErrInternalServerError
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		c.Log.WithError(err).Error("failed to commit transaction")
 		return nil, fiber.ErrInternalServerError
 	}
 

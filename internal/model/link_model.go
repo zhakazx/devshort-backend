@@ -23,13 +23,14 @@ type CreateLinkRequest struct {
 	IsActive bool   `json:"is_active" validate:"required"`
 }
 
-type GetLinksRequest struct {
-	ID     string `json:"-" validate:"omitempty,uuid"`
+type GetLinkRequest struct {
+	ID     string `json:"-" validate:"required,uuid"`
 	UserId string `json:"-" validate:"required,max=100,uuid"`
 }
 
 type UpdateLinkRequest struct {
 	ID       string `json:"-" validate:"required,uuid"`
+	UserId   string `json:"-" validate:"required,max=100,uuid"`
 	Title    string `json:"title" validate:"required,min=2,max=50"`
 	ShortUrl string `json:"short_url" validate:"required"`
 	LongUrl  string `json:"long_url" validate:"required"`
