@@ -7,6 +7,7 @@ import (
 	"devshort-backend/internal/model"
 	"devshort-backend/internal/model/converter"
 	"devshort-backend/internal/repository"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -119,7 +120,7 @@ func (c *LinkUseCase) Update(ctx context.Context, request *model.UpdateLinkReque
 	}
 
 	link := new(entity.Link)
-	if err := c.LinkRepository.FindById(tx, link, request.ID); err != nil {
+	if err := c.LinkRepository.FindByIdAndUserId(tx, link, request.ID, request.UserId); err != nil {
 		c.Log.WithError(err).Error("failed to find link by id")
 		return nil, fiber.ErrNotFound
 	}
@@ -127,7 +128,8 @@ func (c *LinkUseCase) Update(ctx context.Context, request *model.UpdateLinkReque
 	link.Title = request.Title
 	link.ShortUrl = request.ShortUrl
 	link.LongUrl = request.LongUrl
-	link.IsActive = request.IsActive
+	link.IsActive = *request.IsActive
+	link.UpdatedAt = time.Now().UnixMilli()
 
 	if err := c.LinkRepository.Update(tx, link); err != nil {
 		c.Log.WithError(err).Error("failed to update link")

@@ -12,11 +12,11 @@ type LinkResponse struct {
 }
 
 type ListLinkRequest struct {
-	UserId string `json:"-" validate:"required,max=100,uuid"`
+	UserId string `json:"-" validate:"required,max=100"`
 }
 
 type CreateLinkRequest struct {
-	UserId   string `json:"-" validate:"required,max=100,uuid"`
+	UserId   string `json:"-" validate:"required,max=100"`
 	Title    string `json:"title" validate:"required,min=2,max=50"`
 	ShortUrl string `json:"short_url" validate:"required"`
 	LongUrl  string `json:"long_url" validate:"required"`
@@ -25,19 +25,19 @@ type CreateLinkRequest struct {
 
 type GetLinkRequest struct {
 	ID     string `json:"-" validate:"required,uuid"`
-	UserId string `json:"-" validate:"required,max=100,uuid"`
+	UserId string `json:"-" validate:"required,max=100"`
 }
 
 type UpdateLinkRequest struct {
 	ID       string `json:"-" validate:"required,uuid"`
-	UserId   string `json:"-" validate:"required,max=100,uuid"`
+	UserId   string `json:"-" validate:"required,max=100"`
 	Title    string `json:"title" validate:"required,min=2,max=50"`
 	ShortUrl string `json:"short_url" validate:"required"`
 	LongUrl  string `json:"long_url" validate:"required"`
-	IsActive bool   `json:"is_active" validate:"required"`
+	IsActive *bool  `json:"is_active" validate:"required"`
 }
 
 type DeleteLinkRequest struct {
 	ID     string `json:"-" validate:"required,uuid"`
-	UserId string `json:"-" validate:"required,max=100,uuid"`
+	UserId string `json:"-" validate:"required,max=100"`
 }

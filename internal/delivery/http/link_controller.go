@@ -83,7 +83,8 @@ func (c *LinkController) Update(ctx *fiber.Ctx) error {
 	}
 
 	request.UserId = auth.ID
-
+	request.ID = ctx.Params("linkId")
+	
 	response, err := c.UseCase.Update(ctx.UserContext(), request)
 	if err != nil {
 		c.Log.WithError(err).Error("error updating link")
@@ -91,4 +92,21 @@ func (c *LinkController) Update(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(model.WebResponse[*model.LinkResponse]{Data: response})
+}
+
+func (c *LinkController) Delete(ctx *fiber.Ctx) error {
+	auth := middleware.GetUser(ctx)
+	linkId := ctx.Params("linkId")
+
+	request := &model.DeleteLinkRequest{
+		UserId: auth.ID,
+		ID:     linkId,
+	}
+
+	if err := c.UseCase.Delete(ctx.UserContext(), request); err != nil {
+		c.Log.WithError(err).Error("error deleting link")
+		return fiber.ErrInternalServerError
+	}
+
+	return ctx.JSON(model.WebResponse[bool]{Data: true})
 }

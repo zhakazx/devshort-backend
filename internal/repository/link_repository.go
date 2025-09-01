@@ -30,12 +30,3 @@ func (r *LinkRepository) FindAllByUserId(tx *gorm.DB, userId string) ([]entity.L
 	}
 	return links, nil
 }
-
-func (r *LinkRepository) FindActiveLinksByUserId(tx *gorm.DB, userId string) ([]entity.Link, error) {
-    var links []entity.Link
-    if err := tx.Where("user_id = ? AND is_active = ?", userId, true).Find(&links).Error; err != nil {
-        r.Log.WithError(err).Error("error finding active links by user id")
-        return nil, err
-    }
-    return links, nil
-}

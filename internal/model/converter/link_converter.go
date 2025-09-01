@@ -8,6 +8,7 @@ import (
 func LinkToResponse(link *entity.Link) *model.LinkResponse {
 	return &model.LinkResponse{
 		ID:       link.ID,
+		UserId:   link.UserId,
 		Title:    link.Title,
 		ShortUrl: link.ShortUrl,
 		LongUrl:  link.LongUrl,
