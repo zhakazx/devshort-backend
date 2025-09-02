@@ -2,23 +2,46 @@ package middleware
 
 import (
 	"devshort-backend/internal/model"
-	"devshort-backend/internal/usecase"
+	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-func NewAuth(userUserCase *usecase.UserUseCase) fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		request := &model.VerifyUserRequest{Token: ctx.Get("Authorization", "NOT_FOUND")}
-		userUserCase.Log.Debugf("Authorization : %s", request.Token)
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
-		auth, err := userUserCase.Verify(ctx.UserContext(), request)
-		if err != nil {
-			userUserCase.Log.Warnf("Failed find user by token : %+v", err)
+func NewAuth() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		authHeader := ctx.Get("Authorization")
+		if authHeader == "" {
 			return fiber.ErrUnauthorized
 		}
 
-		userUserCase.Log.Debugf("User : %+v", auth.ID)
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenStr == authHeader {
+			return fiber.NewError(fiber.StatusUnauthorized, "Invalid token format")
+		}
+
+		// parse & verifikasi JWT
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fiber.ErrUnauthorized
+			}
+			return jwtSecret, nil
+		})
+
+		if err != nil || !token.Valid {
+			return fiber.NewError(fiber.StatusUnauthorized, "Invalid or expired token")
+		}
+
+		// ambil claims
+		claims := token.Claims.(jwt.MapClaims)
+
+		auth := &model.Auth{
+			ID: claims["id"].(string),
+		}
+
 		ctx.Locals("auth", auth)
 		return ctx.Next()
 	}

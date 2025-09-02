@@ -48,7 +48,7 @@ func Bootstrap(config *BootstrapConfig) {
 	linkController := http.NewLinkController(linkUseCase, config.Log)
 
 	// setup middleware
-	authMiddleware := middleware.NewAuth(userUseCase)
+	authMiddleware := middleware.NewAuth()
 
 	routeConfig := route.RouteConfig{
 		App:               config.App,

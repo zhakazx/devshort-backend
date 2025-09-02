@@ -7,10 +7,12 @@ import (
 	"devshort-backend/internal/model"
 	"devshort-backend/internal/model/converter"
 	"devshort-backend/internal/repository"
+	"os"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -35,28 +37,31 @@ func NewUserUseCase(db *gorm.DB, logger *logrus.Logger, validate *validator.Vali
 	}
 }
 
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+
+func (c *UserUseCase) generateJWT(userID string) (string, error) {
+    claims := jwt.MapClaims{
+        "id":  userID,
+        "exp": time.Now().Add(24 * time.Hour).Unix(), // expired 1 hari
+    }
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(jwtSecret)
+}
+
 func (c *UserUseCase) Verify(ctx context.Context, request *model.VerifyUserRequest) (*model.Auth, error) {
-	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Rollback()
+    token, err := jwt.Parse(request.Token, func(token *jwt.Token) (interface{}, error) {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, fiber.ErrUnauthorized
+        }
+        return jwtSecret, nil
+    })
 
-	err := c.Validate.Struct(request)
-	if err != nil {
-		c.Log.Warnf("Invalid request body : %+v", err)
-		return nil, fiber.ErrBadRequest
-	}
+    if err != nil || !token.Valid {
+        return nil, fiber.ErrUnauthorized
+    }
 
-	user := new(entity.User)
-	if err := c.UserRepository.FindByToken(tx, user, request.Token); err != nil {
-		c.Log.Warnf("Failed find user by token : %+v", err)
-		return nil, fiber.ErrNotFound
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		c.Log.Warnf("Failed commit transaction : %+v", err)
-		return nil, fiber.ErrInternalServerError
-	}
-
-	return &model.Auth{ID: user.ID}, nil
+    claims := token.Claims.(jwt.MapClaims)
+    return &model.Auth{ID: claims["id"].(string)}, nil
 }
 
 func (c *UserUseCase) Create(ctx context.Context, request *model.RegisterUserRequest) (*model.UserResponse, error) {
@@ -117,48 +122,52 @@ func (c *UserUseCase) Create(ctx context.Context, request *model.RegisterUserReq
 }
 
 func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest) (*model.UserResponse, error) {
-	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Rollback()
+    tx := c.DB.WithContext(ctx).Begin()
+    defer tx.Rollback()
 
-	if err := c.Validate.Struct(request); err != nil {
-		c.Log.Warnf("Invalid request body  : %+v", err)
-		return nil, fiber.ErrBadRequest
-	}
+    if err := c.Validate.Struct(request); err != nil {
+        c.Log.Warnf("Invalid request body  : %+v", err)
+        return nil, fiber.ErrBadRequest
+    }
 
-	user := new(entity.User)
-	if err := c.UserRepository.FindById(tx, user, request.ID); err != nil {
-		c.Log.Warnf("Failed find user by id : %+v", err)
-		return nil, fiber.ErrUnauthorized
-	}
+    user := new(entity.User)
+    if err := c.UserRepository.FindById(tx, user, request.ID); err != nil {
+        c.Log.Warnf("Failed find user by id : %+v", err)
+        return nil, fiber.ErrUnauthorized
+    }
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
-		c.Log.Warnf("Failed to compare user password with bcrype hash : %+v", err)
-		return nil, fiber.ErrUnauthorized
-	}
+    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
+        c.Log.Warnf("Invalid password : %+v", err)
+        return nil, fiber.ErrUnauthorized
+    }
 
-	user.Token = uuid.New().String()
-	if err := c.UserRepository.Update(tx, user); err != nil {
-		c.Log.Warnf("Failed save user : %+v", err)
-		return nil, fiber.ErrInternalServerError
-	}
+    token, err := c.generateJWT(user.ID)
+    if err != nil {
+        c.Log.Warnf("Failed to generate jwt : %+v", err)
+        return nil, fiber.ErrInternalServerError
+    }
 
-	if err := tx.Commit().Error; err != nil {
-		c.Log.Warnf("Failed commit transaction : %+v", err)
-		return nil, fiber.ErrInternalServerError
-	}
+    if err := tx.Commit().Error; err != nil {
+        c.Log.Warnf("Failed commit transaction : %+v", err)
+        return nil, fiber.ErrInternalServerError
+    }
 
-	if c.UserProducer != nil {
-		event := converter.UserToEvent(user)
-		c.Log.Info("Publishing user login event")
-		if err := c.UserProducer.Send(event); err != nil {
-			c.Log.Warnf("Failed publish user login event : %+v", err)
-			return nil, fiber.ErrInternalServerError
-		}
-	} else {
-		c.Log.Info("Kafka producer is disabled, skipping user login event")
-	}
+    if c.UserProducer != nil {
+        event := converter.UserToEvent(user)
+        c.Log.Info("Publishing user login event")
+        if err := c.UserProducer.Send(event); err != nil {
+            c.Log.Warnf("Failed publish user login event : %+v", err)
+            return nil, fiber.ErrInternalServerError
+        }
+    } else {
+        c.Log.Info("Kafka producer is disabled, skipping user login event")
+    }
 
-	return converter.UserToTokenResponse(user), nil
+    return &model.UserResponse{
+        ID:    user.ID,
+        Name:  user.Name,
+        Token: token,
+    }, nil
 }
 
 func (c *UserUseCase) Current(ctx context.Context, request *model.GetUserRequest) (*model.UserResponse, error) {
@@ -185,45 +194,10 @@ func (c *UserUseCase) Current(ctx context.Context, request *model.GetUserRequest
 }
 
 func (c *UserUseCase) Logout(ctx context.Context, request *model.LogoutUserRequest) (bool, error) {
-	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Rollback()
-
-	if err := c.Validate.Struct(request); err != nil {
-		c.Log.Warnf("Invalid request body : %+v", err)
-		return false, fiber.ErrBadRequest
-	}
-
-	user := new(entity.User)
-	if err := c.UserRepository.FindById(tx, user, request.ID); err != nil {
-		c.Log.Warnf("Failed find user by id : %+v", err)
-		return false, fiber.ErrNotFound
-	}
-
-	user.Token = ""
-
-	if err := c.UserRepository.Update(tx, user); err != nil {
-		c.Log.Warnf("Failed save user : %+v", err)
-		return false, fiber.ErrInternalServerError
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		c.Log.Warnf("Failed commit transaction : %+v", err)
-		return false, fiber.ErrInternalServerError
-	}
-
-	if c.UserProducer != nil {
-		event := converter.UserToEvent(user)
-		c.Log.Info("Publishing user logout event")
-		if err := c.UserProducer.Send(event); err != nil {
-			c.Log.Warnf("Failed publish user logout event : %+v", err)
-			return false, fiber.ErrInternalServerError
-		}
-	} else {
-		c.Log.Info("Kafka producer is disabled, skipping user logout event")
-	}
-
-	return true, nil
+    c.Log.Infof("User %s logged out (client-side token deletion)", request.ID)
+    return true, nil
 }
+
 
 func (c *UserUseCase) Update(ctx context.Context, request *model.UpdateUserRequest) (*model.UserResponse, error) {
 	tx := c.DB.WithContext(ctx).Begin()

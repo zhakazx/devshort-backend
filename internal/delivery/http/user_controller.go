@@ -23,8 +23,7 @@ func NewUserController(useCase *usecase.UserUseCase, logger *logrus.Logger) *Use
 
 func (c *UserController) Register(ctx *fiber.Ctx) error {
 	request := new(model.RegisterUserRequest)
-	err := ctx.BodyParser(request)
-	if err != nil {
+	if err := ctx.BodyParser(request); err != nil {
 		c.Log.Warnf("Failed to parse request body : %+v", err)
 		return fiber.ErrBadRequest
 	}
@@ -40,8 +39,7 @@ func (c *UserController) Register(ctx *fiber.Ctx) error {
 
 func (c *UserController) Login(ctx *fiber.Ctx) error {
 	request := new(model.LoginUserRequest)
-	err := ctx.BodyParser(request)
-	if err != nil {
+	if err := ctx.BodyParser(request); err != nil {
 		c.Log.Warnf("Failed to parse request body : %+v", err)
 		return fiber.ErrBadRequest
 	}
@@ -58,10 +56,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 func (c *UserController) Current(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
 
-	request := &model.GetUserRequest{
-		ID: auth.ID,
-	}
-
+	request := &model.GetUserRequest{ID: auth.ID}
 	response, err := c.UseCase.Current(ctx.UserContext(), request)
 	if err != nil {
 		c.Log.WithError(err).Warnf("Failed to get current user")
@@ -74,16 +69,15 @@ func (c *UserController) Current(ctx *fiber.Ctx) error {
 func (c *UserController) Logout(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
 
-	request := &model.LogoutUserRequest{
-		ID: auth.ID,
-	}
-
+	request := &model.LogoutUserRequest{ID: auth.ID}
 	response, err := c.UseCase.Logout(ctx.UserContext(), request)
 	if err != nil {
 		c.Log.WithError(err).Warnf("Failed to logout user")
 		return err
 	}
 
+	// ⚠️ Dengan JWT stateless, logout cukup client-side (hapus token).
+	// Endpoint ini hanya return success supaya konsisten.
 	return ctx.JSON(model.WebResponse[bool]{Data: response})
 }
 
